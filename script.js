@@ -1,4 +1,4 @@
-
+const STORAGE_KEY = "workflow-app-state";
 //memory of the app
 const appState={
   workflow:{
@@ -27,6 +27,7 @@ function addItem(title){
   };
 
   appState.items.push(newItem);
+  saveState();
   return newItem;
 }
 function canMoveItem(currentState,nextState) {
@@ -52,6 +53,7 @@ if(!item){
   });
 
   item.state=nextState;
+  saveState();
   return true;
 }
 
@@ -127,6 +129,46 @@ function findColumnByState(stateName){
   }
 }
 
+function saveState(){
+  const stateString = JSON.stringify(appState);
+  localStorage.setItem(STORAGE_KEY,stateString);
+}
+
+function loadState(){
+  const savedState =  localStorage.getItem(STORAGE_KEY);
+
+  if(!savedState){
+    return;
+  }
+
+  const parsedState = JSON.parse(savedState);
+
+  appState.workflow = parsedState.workflow;
+  appState.items = parsedState.items;
+  appState.history = parsedState.history;
+}
+
+function renderHistory(){
+  historyPanel.innerHTML = "";
+
+  if(appState.history.length === 0){
+    const empty = document.createElement("p");
+    empty.textContent = "No activity yet.";
+    historyPanel.appendChild(empty);
+    return;
+  }
+
+  appState.history.forEach(function(entry){
+    const log = document.createElement("div");
+    log.className = "history-item";
+
+    log.textContent = entry.time + " : Item moved from " + entry.form +" → "+entry.to;
+
+    historyPanel.appendChild(log);
+  })
+
+}
+
 boardElement.addEventListener("click",function(event){
   if(!event.target.classList.contains("move-btn")){
     return;
@@ -141,6 +183,7 @@ boardElement.addEventListener("click",function(event){
   if(moved){
     renderWorkflow();
     renderItems();
+    renderHistory();
   }
 });
 
@@ -163,8 +206,11 @@ formElement.addEventListener("submit",function(event){
 //DOM REFERENCES
 const boardElement = document.querySelector("#board");
 const formElement  =  document.querySelector("#item-input");
+const historyPanel = document.querySelector("#history-panel");
 
 
-
+loadState();
 renderWorkflow();
+renderItems();
+renderHistory();
 

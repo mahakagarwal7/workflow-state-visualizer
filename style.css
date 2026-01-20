@@ -36,3 +36,17 @@ body{
     margin-top: 4px;
     cursor: pointer;
 }
+
+#history-panel{
+    margin-top: 20px;
+    border: 1px solid  #ccc;
+    padding: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+    background: #f5f5f5;
+}
+
+.history-item{
+    font-size: 14px;
+    margin-bottom: 6px;
+}
