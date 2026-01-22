@@ -1,216 +1,149 @@
-const STORAGE_KEY = "workflow-app-state";
-//memory of the app
+const STORAGE_KEY = "workflow-pro-data";
+
 const appState={
-  workflow:{
-    states:["Draft","Review","Approved"],
-    transitions:{
-      Draft:["Review"],
-      Review:["Approved","Draft"],
-      Approved:[]
-    }
-
-    
-  },
-
-  items:[],
-
-  history:[]
+    workflow:{
+        states:["Draft","Review","Approved"],
+        transitions:{
+           Draft:["Review"],
+            Review:["Draft", "Approved"],
+            Approved:[]
+        }
+    },
+    items:[],
+    history:[]
 };
-function generateId(){
-  return "item-"+Date.now(); //unique ids
-}
-function addItem(title){
-  const newItem={
-    id:generateId(),
-    title:title,
-    state:appState.workflow.states[0]
-  };
 
-  appState.items.push(newItem);
-  saveState();
-  return newItem;
-}
-function canMoveItem(currentState,nextState) {
-  const allowed=appState.workflow.transitions[currentState];
-  return allowed.includes(nextState);
-}
-function moveItem(itemId, nextState) {
-  const item=appState.items.find(i=>i.id===itemId);
+const columnContainers={};
 
-if(!item){
-    return false;
-}
-
-  if (!canMoveItem(item.state,nextState)) {
-    return false;
-  }
-
-  appState.history.push({
-    itemId:item.id,
-    from:item.state,
-    to:nextState,
-    time:new Date().toLocaleString()
-  });
-
-  item.state=nextState;
-  saveState();
-  return true;
-}
+                    function init(){
+                        loadState();
+                        setupBoard();
+                        renderExistingItems();
+                        renderHistory();
+                    }
 
 
+      function setupBoard(){
+          const board=document.querySelector("#board");
+          board.innerHTML="";
+          
+          appState.workflow.states.forEach(state=>{
+              const col=document.createElement("div");
+              col.className="column";
+              col.innerHTML=`<h2>${state}</h2><div class="card-list" id="list-${state}"></div>`;
+              board.appendChild(col);
+              
+            
+              columnContainers[state]=col.querySelector(".card-list");
+          });
+      }
 
 
+function moveItemUI(itemId,nextState) {
+    const item=appState.items.find(i=>i.id===itemId);
+    const oldState=item.state;
 
-function createColumn(stateName){
-  const column = document.createElement("div");
-  column.className = "column";
-
-  const title = document.createElement("h2");
-  title.textContent = stateName;
-
-  column.appendChild(title);
-
-  return column;
-}
-
-function renderWorkflow(){
-  boardElement.innerHTML = "";
-
-  appState.workflow.states.forEach(function(state){
-    const columnElement = createColumn(state);
-    boardElement.appendChild(columnElement);
-  });
-}
-
-
-function createItemCard(item){
-  const card = document.createElement("div");
-  card.className = "item-card";
-  card.dataset.id = item.id;
-
-  const text =  document.createElement("p");
-  text.textContent = item.title;
-
-  card.appendChild(text);
-
-  const actions = document.createElement("div");
-  actions.className = "actions";
-
-  const possibleMoves = appState.workflow.transitions[item.state];
-  possibleMoves.forEach(function(nextState){
-    const button = document.createElement("button");
-    button.textContent = "Move to "+ nextState;
-    button.dataset.nextState = nextState;
-    button.className = "move-btn";
-
-    actions.appendChild(button);
-  });
-  card.appendChild(actions);
-
-  return card;
-}
-
-function renderItems(){
-  appState.forEach(function(item){
-    const column = findColumnByState(item.state);
-    const card =  createItemCard(item);
-    column.appendChild(card);
-  });
-}
-
-function findColumnByState(stateName){
-  const columns  = document.querySelectorAll(".column");
-
-  for(let column of columns){
-    const title = column.querySelector("h2");
-    if(title.textContent === stateName){
-      return column;
+   
+    if (appState.workflow.transitions[oldState].includes(nextState)) {
+        item.state=nextState;
+       
+        appState.history.push(`${new Date().toLocaleTimeString()}:"${item.title}"→${nextState}`);
+        
+        
+        const cardElement=document.querySelector(`[data-id="${itemId}"]`);
+        columnContainers[nextState].appendChild(cardElement);
+        
+        
+        refreshCardButtons(cardElement,nextState);
+        
+        renderHistory();
+        saveState();
     }
-  }
 }
 
-function saveState(){
-  const stateString = JSON.stringify(appState);
-  localStorage.setItem(STORAGE_KEY,stateString);
+function createCard(item){
+
+
+
+
+    const card=document.createElement("div");
+       card.className="item-card";
+               card.dataset.id=item.id; 
+       card.innerHTML=`<p>${item.title}</p><div class="actions"></div>`;
+       refreshCardButtons(card, item.state);
+    return card;
 }
 
-function loadState(){
-  const savedState =  localStorage.getItem(STORAGE_KEY);
 
-  if(!savedState){
-    return;
-  }
+function refreshCardButtons(card,currentState){
 
-  const parsedState = JSON.parse(savedState);
 
-  appState.workflow = parsedState.workflow;
-  appState.items = parsedState.items;
-  appState.history = parsedState.history;
+
+    const actionContainer=card.querySelector(".actions");
+
+
+    actionContainer.innerHTML="";
+    
+    appState.workflow.transitions[currentState].forEach(target=>{
+
+
+                  const btn=document.createElement("button");
+
+
+        btn.className="move-btn";
+
+      
+        btn.textContent=`Move to ${target}`;
+        btn.onclick=()=>moveItemUI(card.dataset.id, target);
+        actionContainer.appendChild(btn);
+    });
+}
+
+function renderExistingItems(){
+     appState.items.forEach(item=>{
+        const card=createCard(item);
+        columnContainers[item.state].appendChild(card);
+    });
 }
 
 function renderHistory(){
-  historyPanel.innerHTML = "";
-
-  if(appState.history.length === 0){
-    const empty = document.createElement("p");
-    empty.textContent = "No activity yet.";
-    historyPanel.appendChild(empty);
-    return;
-  }
-
-  appState.history.forEach(function(entry){
-    const log = document.createElement("div");
-    log.className = "history-item";
-
-    log.textContent = entry.time + " : Item moved from " + entry.form +" → "+entry.to;
-
-    historyPanel.appendChild(log);
-  })
-
+     const panel=document.querySelector("#history-panel");
+    panel.innerHTML=appState.history.map(h =>`<div class="history-item">${h}</div>`).reverse().join('');
 }
 
-boardElement.addEventListener("click",function(event){
-  if(!event.target.classList.contains("move-btn")){
-    return;
-  }
 
-  const card = event.target.cloasest(".item-card");
-  const itemId = card.dataset.id;
-  const nextState = event.target.dataset.nextState;
+document.querySelector("#item-form").onsubmit=(e)=>{
+      e.preventDefault();
+      
+      const input=document.querySelector("#item-input");
+    
+    
+      const val=input.value.trim();
+    
+    
+      if(!val){
+      return;
+    }
 
-  const moved = moveItem(itemId,nextState);
+    const newItem={ id:"ID-"+Date.now(),title: val,state:"Draft"};
+    appState.items.push(newItem);
+    
+   
+    columnContainers["Draft"].appendChild(createCard(newItem));
+    
+    input.value="";
+    saveState();
+};
 
-  if(moved){
-    renderWorkflow();
-    renderItems();
-    renderHistory();
-  }
-});
+function saveState(){ 
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+ }
+function loadState(){
+    const saved = localStorage.getItem(STORAGE_KEY);
 
-formElement.addEventListener("submit",function(event){
-  event.preventDefault();
+    if (saved){
+      Object.assign(appState, JSON.parse(saved))
+    };
+}
 
-  const title =  inputElement.value.trim();
-
-  if(title===""){
-    alert("Please enter a title");
-    return;
-  }
-
-  addItem(title);
-  inputElement.value = "";
-
-  renderWorkflow();
-  renderItems();
-});
-//DOM REFERENCES
-const boardElement = document.querySelector("#board");
-const formElement  =  document.querySelector("#item-input");
-const historyPanel = document.querySelector("#history-panel");
-
-
-loadState();
-renderWorkflow();
-renderItems();
-renderHistory();
-
+init();

@@ -3,25 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <style rel="stylesheet" href="style.css"></style>
+    <title>Workflow State Visualizer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
 </head>
 <body>
-    <h1>Workflow State Visualizer</h1>
+    <div class="bg-overlay"></div>
 
-    <div id="board"></div>
+    <div class="container">
 
 
-    <script src="script.js"></script>
 
-    <form id="item-form">
-        <input type="text" id="item-input" placeholder="Enter item title">
-        <button type="submit">Add Item</button>
-    </form>
 
-    <h2>Activity History</h2>
-    <div id="history-panel"></div>
-    
-    
+        <header>
+            <h1>Workflow Visualizer</h1>
+            <form id="item-form">
+                   <input type="text" id="item-input" placeholder="Enter task title..." required>
+                   <button type="submit">Add New Task</button>
+            </form>
+        </header>
+
+        <main id="board"></main>
+
+        <aside class="history-section">
+            <h2>Activity History</h2>
+            <div id="history-panel"></div>
+        </aside>
+    </div>
 </body>
 </html>
