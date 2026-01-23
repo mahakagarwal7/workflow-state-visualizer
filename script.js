@@ -30,7 +30,11 @@ const columnContainers={};
           appState.workflow.states.forEach(state=>{
               const col=document.createElement("div");
               col.className="column";
+
+
               col.innerHTML=`<h2>${state}</h2><div class="card-list" id="list-${state}"></div>`;
+
+              
               board.appendChild(col);
               
             
@@ -51,6 +55,10 @@ function moveItemUI(itemId,nextState) {
         
         
         const cardElement=document.querySelector(`[data-id="${itemId}"]`);
+
+
+
+
         columnContainers[nextState].appendChild(cardElement);
         
         
@@ -94,7 +102,12 @@ function refreshCardButtons(card,currentState){
 
       
         btn.textContent=`Move to ${target}`;
+
+
+
         btn.onclick=()=>moveItemUI(card.dataset.id, target);
+
+
         actionContainer.appendChild(btn);
     });
 }
@@ -108,6 +121,8 @@ function renderExistingItems(){
 
 function renderHistory(){
      const panel=document.querySelector("#history-panel");
+
+
     panel.innerHTML=appState.history.map(h =>`<div class="history-item">${h}</div>`).reverse().join('');
 }
 
